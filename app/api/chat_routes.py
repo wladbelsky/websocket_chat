@@ -1,12 +1,16 @@
-from dependency_injector.wiring import inject, Provide
+from typing import List
+
+from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.core.auth import get_current_user
 from app.core.containers import Container
 from app.models.user import User
 from app.repositories.chat_repository import ChatRepository
+from app.repositories.message_repository import MessageRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.chat import ChatCreate, ChatResponse
+from app.schemas.message import MessageResponse
 
 router = APIRouter(prefix="/chats", tags=["chats"])
 
@@ -49,3 +53,51 @@ async def create_chat(
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/history/{chat_id}", response_model=List[MessageResponse])
+@inject
+async def get_chat_history(
+    chat_id: int,
+    limit: int = 50,
+    offset: int = 0,
+    current_user: User = Depends(get_current_user),
+    chat_repository: ChatRepository = Depends(Provide[Container.chat_repository]),
+    message_repository: MessageRepository = Depends(Provide[Container.message_repository]),
+):
+    """
+    Get the message history for a specific chat.
+    
+    Parameters:
+    - chat_id: ID of the chat
+    - limit: Maximum number of messages to return (default: 50)
+    - offset: Number of messages to skip (default: 0)
+    
+    Returns:
+    - List of messages sorted by timestamp (ascending)
+    """
+    chat = await chat_repository.get_by_id(chat_id, load_relationships=True)
+    if not chat:
+        raise HTTPException(status_code=404, detail="Chat not found")
+    
+    is_participant = False
+    for participant in chat.participants:
+        if participant.user_id == current_user.id:
+            is_participant = True
+            break
+    
+    if not is_participant:
+        raise HTTPException(
+            status_code=403, 
+            detail="You do not have access to this chat's history"
+        )
+    
+    messages = await message_repository.get_history(
+        chat_id=chat_id,
+        limit=limit,
+        offset=offset,
+        load_relationships=True
+    )
+    
+    return messages
+
