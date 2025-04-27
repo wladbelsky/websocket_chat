@@ -12,8 +12,6 @@ services:
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/socket_chat
       - SECRET_KEY=your_secret_key
       - REDIS_URL=redis://redis:6379/0
-    volumes:
-      - ./:/app
     networks:
       - chat-network
     restart: unless-stopped
