@@ -1,8 +1,6 @@
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/wladbelsky/websocket_chat/master:master
     ports:
       - "8000:8000"
     depends_on:
@@ -12,7 +10,7 @@ services:
         condition: service_healthy
     environment:
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/socket_chat
-      - SECRET_KEY=${SECRET_KEY}
+      - SECRET_KEY=your_secret_key
       - REDIS_URL=redis://redis:6379/0
     volumes:
       - ./:/app
