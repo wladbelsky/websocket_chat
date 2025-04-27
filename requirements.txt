@@ -1,0 +1,15 @@
+fastapi
+websockets
+sqlalchemy
+asyncpg
+dependency_injector
+uvicorn
+pydantic
+pydantic-settings
+python-jose[cryptography]
+passlib[bcrypt]
+bcrypt
+python-multipart
+broadcaster[redis]
+starlette
+redis
